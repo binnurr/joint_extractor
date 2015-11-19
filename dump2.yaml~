@@ -1,0 +1,11 @@
+TrackUserNode: {root: None}
+rosdistro: 'indigo
+
+  '
+roslaunch:
+  uris: {host_binnur2_lenovo_z580__35370: 'http://binnur2-Lenovo-Z580:35370/', host_binnur2_lenovo_z580__39890: 'http://binnur2-Lenovo-Z580:39890/',
+    host_binnur2_lenovo_z580__42135: 'http://binnur2-Lenovo-Z580:42135/'}
+rosversion: '1.11.13
+
+  '
+run_id: 2411abc2-7b13-11e5-81c9-2cd05aa15b4e

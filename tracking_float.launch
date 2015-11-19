@@ -1,0 +1,6 @@
+<launch>
+	<node name="TrackUserNode" pkg="skeleton_tracking" type="skeleton_tracking" cwd="node" output="screen" args="Captured.oni">
+		<rosparam command="load" file="$(find skeleton_tracking)/joints_float.yaml"/>	
+	</node>
+		
+</launch>

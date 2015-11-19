@@ -1,0 +1,4 @@
+~/robotics/MoreProject/rosIndigo/src/skeleton_tracking$ rosrun skeleton_tracking skeleton_tracking Captured.oni 
+
+~/robotics/MoreProject/rosIndigo$ catkin_make
+
