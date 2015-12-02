@@ -1,4 +1,32 @@
-~/robotics/MoreProject/rosIndigo/src/skeleton_tracking$ rosrun skeleton_tracking skeleton_tracking Captured.oni 
+Download and Install OpenNI from http://structure.io/openni
+Download and Install Nite from https://www.dropbox.com/s/c46upw6s8ml6i0t/nite.zip?dl=0
+Install scripts will create NiTEDevEnvironment and OpenNIDevEnvironment
+Source NiTEDevEnvironment and OpenNIDevEnvironment from .bashrc
+Source .bashrc
 
-~/robotics/MoreProject/rosIndigo$ catkin_make
+clone the ros package in https://github.com/binnurr/joint_extractor
+copy the NiTE2 folder under nite/Redist/ to devel folder of the package
+(it should be in the same directory with executable file)
+
+to control the avatar in Morse with skeleton tracking package, please run the followings; 
+
+roscore
+morse run morse/examples/tutorials/new_human_control.py
+roslaunch skeleton_tracking tracking.launch (which plays the .Oni file written in the launch file)
+
+or
+
+roscore
+morse run morse/examples/tutorials/new_human_control.py
+roslaunch skeleton_tracking trackingRC.launch (which runs on real stream from Asus Xtion)
+
+
+to record a .Oni file simply run NiViewer under OpenNI2/Bin
+press S (recording will start)
+press any key to stop recording
+Then copy this .Oni file to the directory of executable of skeleton tracking (which is devel folder)
+
+Please also note that this code runs with the morse code which allows rotations along 3 axes
+To get the relevant morse branch, go to 
+https://github.com/binnurr/morse/tree/skeleton_tracking/
 

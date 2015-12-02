@@ -117,8 +117,8 @@ catkin_package(
 # include_directories(include)
 include_directories(
   ${catkin_INCLUDE_DIRS}
-  /home/binnur2/robotics/MoreProject/OpenNI2/Include
-  /home/binnur2/robotics/MoreProject/nite/Include
+  $ENV{NITE2_INCLUDE}
+  $ENV{OPENNI2_INCLUDE}
 )
 
 ## Declare a C++ library
@@ -145,8 +145,8 @@ include_directories(
 ## Specify libraries to link a library or executable target against
  target_link_libraries(${PROJECT_NAME}
    ${catkin_LIBRARIES}
-   /home/binnur2/robotics/MoreProject/OpenNI2/Bin/x64-Release/libOpenNI2.so
-   /home/binnur2/robotics/MoreProject/nite/Redist/libNiTE2.so
+   $ENV{NITE2_REDIST64}/libNiTE2.so
+   $ENV{OPENNI2_REDIST64}/libOpenNI2.so
  )
 
 #############

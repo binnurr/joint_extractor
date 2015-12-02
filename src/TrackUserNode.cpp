@@ -57,7 +57,7 @@ public:
 
 		ac = new actionlib::SimpleActionClient<pr2_controllers_msgs::JointTrajectoryAction>(topic_name, true);
 		ROS_INFO("Waiting for action server to start.");
-		//ac->waitForServer(); //will wait for infinite time
+		ac->waitForServer(); //will wait for infinite time
 		ROS_INFO("Action server started, sending goal.");
 
 		// create subscribers
@@ -134,9 +134,9 @@ public:
 
 		while(nh.ok())
 		{
-		    ros::Duration dur = ros::Time::now() - previous;
-		    previous = ros::Time::now();
-		    //std::cout<<"TimePassed: "<<dur.toSec()<<std::endl;
+//		    ros::Duration dur = ros::Time::now() - previous;
+//		    previous = ros::Time::now();
+//		    std::cout<<"TimePassed: "<<dur.toSec()<<std::endl;
 			  trackUserNI.waitAndUpdateAll();
 
 				// do all processing here
@@ -154,7 +154,7 @@ public:
 						    goal.trajectory.points[0].positions[i] = joints[jointIndexes[i]];
 						}
 						goal.trajectory.points[0].time_from_start = ros::Duration(0.1);
-						//ac->sendGoalAndWait(goal);
+						ac->sendGoalAndWait(goal);
 
 				}
 				else if(check==6){
