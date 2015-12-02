@@ -11,7 +11,7 @@
 class HumanJoints {
 public:
 enum HumanJs{
-	UserCOM,
+	Torso,
 	Neck,
 	Head,
 	LeftShoulder,
@@ -22,10 +22,8 @@ enum HumanJs{
 	RightHand,
 	LeftHip,
 	LeftKnee,
-	LeftAnkle,
 	RightHip,
 	RightKnee,
-	RightAnkle,
 	LeftFoot,
 	RightFoot
 
@@ -47,7 +45,8 @@ enum HumanJVectors{
 	RightHipToKnee,
 	RightKneeToAnkle,
 	RightHipToAnkle,
-	HeadToNeck
+	HeadToNeck,
+  NeckToTorso,
 };
 };
 
