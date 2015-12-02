@@ -1,8 +1,0 @@
-<launch>
-	<node name="TrackUserNode" pkg="skeleton_tracking" type="skeleton_tracking" cwd="node" output="screen" args="Captured.oni">
-		<param name="root" value="None"/>
-		<param	name="spine05" value="Torso"/>
-		
-	</node>
-		
-</launch>
