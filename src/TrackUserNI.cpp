@@ -31,7 +31,7 @@ TrackUserNI::TrackUserNI()
 	jointvectorarray = new Vector3D[14];
   numJoints = 17;
   joints.resize(numJoints);
-	outfile.open("legs.txt");
+	outfile.open("legs.txt");  // TODO: remove after debugging
 }
 
 TrackUserNI::~TrackUserNI(){}
@@ -163,6 +163,9 @@ int TrackUserNI::isTrackingUser()
 vector<Vector3D> TrackUserNI::rodrigues_rot(vector<Vector3D> vectors, Vector3D rot, float theta){
 
   float vectorLength = vectorNorm(rot);
+  if(vectorLength == 0.0){
+    //vectorLength = 0.0001;
+  }
   div(rot,vectorLength); // normalize rotation axis
 
   int No = vectors.size(); // number of vectors in array
@@ -182,11 +185,11 @@ vector<Vector3D> TrackUserNI::rodrigues_rot(vector<Vector3D> vectors, Vector3D r
   return v_rot;
 }
 
-vector<float> TrackUserNI::extractAng(Vector3D bone, float rotAng){
+vector<float> TrackUserNI::extractAng(Vector3D bone, float rotAng, int right){
 
   // find pitch angle
   vector <Vector3D> axes;
-  axes.push_back(Vector3D(0,1,0));
+  axes.push_back(Vector3D(0,right*1,0));
   axes.push_back(Vector3D(0,0,1));
 
   Vector3D rot(1,0,0);
@@ -198,8 +201,8 @@ vector<float> TrackUserNI::extractAng(Vector3D bone, float rotAng){
   Vector3D CV = rotatedAxes.at(0);
   Vector3D DV(0, 0, 0);
   Vector3D EV (-bone.pointsXYZ[2],
-               -bone.pointsXYZ[0],
-               bone.pointsXYZ[1]);
+                bone.pointsXYZ[0],
+               -bone.pointsXYZ[1]);
   // normal vector to plane ABC
   Vector3D N = cross(sub(BV,AV), sub(CV,AV));
   // angle between plane and line, equals pi/2 - angle between D-E and N
@@ -225,8 +228,79 @@ vector<float> TrackUserNI::extractAng(Vector3D bone, float rotAng){
 Vector3D TrackUserNI::convertPoint3ftoVector3D (const nite::Point3f& point){
    Vector3D vector(point.x, point.y, point.z);
    return vector;
+}
+
+Vector3D TrackUserNI::extendVector3D (Vector3D bone, float length){
+   float ori_length = vectorNorm(bone);
+   float new_y = bone.pointsXYZ[1] + (bone.pointsXYZ[1]/ori_length)*length;
+   float new_x = bone.pointsXYZ[0] + abs(cos(asin(bone.pointsXYZ[1]/ori_length))*length*cos(atan(bone.pointsXYZ[2]/bone.pointsXYZ[0])))* (bone.pointsXYZ[0]/fabs(bone.pointsXYZ[0]));
+   float new_z = bone.pointsXYZ[2] + abs(cos(asin(bone.pointsXYZ[1]/ori_length))*length*sin(atan(bone.pointsXYZ[2]/bone.pointsXYZ[0])))* (bone.pointsXYZ[2]/fabs(bone.pointsXYZ[2]));
+   Vector3D ext_vector(new_x, new_y, new_z);
+   Vector3D DV = sub(ext_vector,bone);
+   return DV;
 
 }
+
+void TrackUserNI::printVec (string name, Vector3D v){
+  std::cout<<std::fixed << std::setprecision(3)<<name<<": "<<v.pointsXYZ[0]<<" "<<v.pointsXYZ[1]<<" "<<v.pointsXYZ[2]<<std::endl;
+  return;
+
+}
+
+float TrackUserNI::rotateAxes (float pitch, float elbowRoll, bool rightSide){
+
+  Vector3D x(1,0,0);
+  Vector3D y(0,1,0);
+  Vector3D z(0,0,1);
+  vector<Vector3D> vectors;
+  vectors.push_back(y);
+  y = rodrigues_rot(vectors, x, -(0.7+ pitch)).at(0);
+  z = cross(y,x);
+
+  int right = 0;
+  if(rightSide)
+    right = 3;
+
+  float len = vectorNorm(jointvectorarray[1 + right]);
+  Vector3D extended = extendVector3D(jointvectorarray[0 + right],len);
+  vectors.clear();
+  vectors.push_back(extended);
+  Vector3D new_rot (-z.pointsXYZ[1], z.pointsXYZ[2], -z.pointsXYZ[0]);
+  Vector3D bended = rodrigues_rot(vectors, new_rot, (elbowRoll+0.8)).at(0);
+  Vector3D calculated = sum(bended, jointvectorarray[0 + right]);
+
+
+  Vector3D diff = sub(jointvectorarray[2 + right], calculated);
+
+  float shoulderYaw = 0.0;
+  if( diff.pointsXYZ[0] > 100 || diff.pointsXYZ[1] > 100 || diff.pointsXYZ[2] > 100){
+
+     y = Vector3D(-y.pointsXYZ[1], y.pointsXYZ[2], -y.pointsXYZ[0]);
+     div(y,vectorNorm(y)); // normalize rotation axis
+     div(bended,vectorNorm(bended));
+     Vector3D crosskv = cross(y, bended);
+     Vector3D final = jointvectorarray[1 + right];
+     div(final,vectorNorm(final));
+
+     float min = 5.0;
+     float theta = 100.0;
+     vectors.clear();
+     vectors.push_back(bended);
+     Vector3D temp;
+     float angle;
+     for (int i=-180;i<=180;i++){
+       temp = rodrigues_rot(vectors, y, (i/180.0)*PI).at(0);
+       angle = angleBtwVecs (temp, final);
+       if (fabs(angle) < fabs(min)){
+         min = angle;
+         theta = (i/180.0)*PI;
+       }
+     }
+     shoulderYaw = theta;
+  }
+  return shoulderYaw;
+}
+
 
 void TrackUserNI::clipJoints (vector<float> &joints){
     for (int i = 0; i< joints.size(); i++){
@@ -302,50 +376,59 @@ vector<float> TrackUserNI::trackUser()
 
 
 
-    vector<float> shoulder_angles = extractAng(jointvectorarray[HumanJointVectors::LeftShoulderToElbow], -0.7);
-    shoulderPitchLeft = -1*shoulder_angles.at(0);
+    vector<float> shoulder_angles = extractAng(jointvectorarray[HumanJointVectors::LeftShoulderToElbow], -0.7, 1);
+    shoulderPitchLeft = shoulder_angles.at(0);
     shoulderRollLeft = shoulder_angles.at(1);
 
-    shoulder_angles = extractAng(jointvectorarray[HumanJointVectors::RightShoulderToElbow], 0.7);
+    //std::cout<<"PL: "<<shoulderPitchLeft<<"RL: "<<shoulderRollLeft<<std::endl;
+
+    shoulder_angles = extractAng(jointvectorarray[HumanJointVectors::RightShoulderToElbow], 0.7, -1);
 
     shoulderPitch = -1*shoulder_angles.at(0);
-    //std::cout<<shoulderPitch<<std::endl;
-    shoulderRoll = -1*shoulder_angles.at(1);
+    shoulderRoll = shoulder_angles.at(1);
+
+    //std::cout<<"PR: "<<shoulderPitch<<"RR: "<<shoulderRoll<<std::endl;
 
     elbowRollLeft = 0.75*PI - angleBtwVecs(jointvectorarray[HumanJointVectors::LeftShoulderToElbow], jointvectorarray[HumanJointVectors::LeftElbowToHand]);
     elbowRoll = 0.75*PI - angleBtwVecs(jointvectorarray[HumanJointVectors::RightShoulderToElbow], jointvectorarray[HumanJointVectors::RightElbowToHand]);
 
-    vector<float> hip_angles = extractAng(jointvectorarray[HumanJointVectors::LeftHipToKnee], 1.57);
-    hipPitchLeft = -1*hip_angles.at(0);  //figure1
-    hipRollLeft = -1*hip_angles.at(1);  //figure2
+    //std::cout<<"EL: "<<elbowRollLeft<<"ER: "<<elbowRoll<<std::endl;
 
-    hip_angles = extractAng(jointvectorarray[HumanJointVectors::RightHipToKnee], 1.57);
+    shoulderYawLeft = -1*rotateAxes(shoulderPitchLeft, elbowRollLeft, false);
+    shoulderYaw = -1*rotateAxes(shoulderPitch, elbowRoll, true);
 
-    hipPitch = hip_angles.at(0);  //figure3
-    hipRoll = hip_angles.at(1);  //figure4
+    vector<float> hip_angles = extractAng(jointvectorarray[HumanJointVectors::LeftHipToKnee], -1.57, -1);
+    hipRollLeft = hip_angles.at(0);
+    hipPitchLeft = hip_angles.at(1);
+
+    hip_angles = extractAng(jointvectorarray[HumanJointVectors::RightHipToKnee], -1.57, 1);
+
+    hipRoll = hip_angles.at(0);
+    hipPitch = hip_angles.at(1);
+
+    //std::cout<< std::fixed << std::setprecision(3)<<hipPitchLeft<<" "<<std::fixed << std::setprecision(3)<<hipRollLeft<<" "<<
+      //  std::fixed << std::setprecision(3)<<hipPitch<<" "<<std::fixed << std::setprecision(3)<<hipRoll<<std::endl;
 
     kneePitchLeft = -1*(PI - angleBtwVecs(jointvectorarray[HumanJointVectors::LeftHipToKnee], jointvectorarray[HumanJointVectors::LeftKneeToAnkle]));
     kneePitch = PI - angleBtwVecs(jointvectorarray[HumanJointVectors::RightHipToKnee], jointvectorarray[HumanJointVectors::RightKneeToAnkle]);
 
-    torsoBending = extractAng(jointvectorarray[HumanJointVectors::NeckToTorso],1.57).at(1);
-    /*outfile<<hipPitchLeft<<" "<<hipRollLeft<<" "
-        <<hipPitch<<" "<<hipRoll<<" "
-        <<kneePitchLeft<<" "<<kneePitch<<std::endl;
-    cout<<"Torso "<<torsoBending<<endl;*/
+    //std::cout<< std::fixed << std::setprecision(3)<<kneePitchLeft<<" "<<std::fixed << std::setprecision(3)<<kneePitch<<std::endl;
+    torsoBending = PI/2-extractAng(jointvectorarray[HumanJointVectors::NeckToTorso],0,-1).at(0);
 
-    joints[0] = 0.0;
+    headPitch = PI/2-extractAng(jointvectorarray[HumanJointVectors::HeadToNeck],0,-1).at(0);
+
+    joints[0] = headPitch;
     joints[1] = 0.0;
 
-    joints[2] = shoulderPitchLeft;   //shoulderPitch
-    joints[3] = shoulderRollLeft;       //shoulderRoll
-    joints[4] = -0.5;         //elbowYaw
-    joints[5] = elbowRollLeft; //elbowRoll
+    joints[2] = shoulderPitchLeft;
+    joints[3] = shoulderRollLeft;
+    joints[4] = shoulderYawLeft;
+    joints[5] = elbowRollLeft;
 
     joints[6] = shoulderPitch;
     joints[7] = shoulderRoll;
-    joints[8] = 0.5;
+    joints[8] = shoulderYaw;
     joints[9] = elbowRoll;
-
 
     joints[10] = hipPitchLeft;
     joints[11] = hipRollLeft;
@@ -403,6 +486,14 @@ inline Vector3D TrackUserNI::sub (Vector3D vector1, Vector3D vector2){
   Vector3D vector;
   for(int i=0;i<3;i++){
     vector.pointsXYZ[i] = vector1.pointsXYZ[i] - vector2.pointsXYZ[i];
+  }
+  return vector;
+}
+
+inline Vector3D TrackUserNI::sum (Vector3D vector1, Vector3D vector2){
+  Vector3D vector;
+  for(int i=0;i<3;i++){
+    vector.pointsXYZ[i] = vector1.pointsXYZ[i] + vector2.pointsXYZ[i];
   }
   return vector;
 }

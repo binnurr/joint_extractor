@@ -50,10 +50,12 @@ public:
 
 	//initiation for angles
 	float shoulderPitch;
+	float shoulderYaw;
 	float shoulderRoll;
 	float elbowYaw;
 	float elbowRoll;
 	float shoulderPitchLeft;
+	float shoulderYawLeft;
 	float shoulderRollLeft;
 	float elbowYawLeft;
 	float elbowRollLeft;
@@ -66,6 +68,7 @@ public:
 	float kneePitch;
 	float kneePitchLeft;
 	float torsoBending;
+	float headPitch;
 
 	Vector3D * jointvectorarray;
 
@@ -88,12 +91,15 @@ public:
 	void init(int argc, char **argv, vector<float> *minLimits, vector<float> *maxLimits);
 	void waitAndUpdateAll();
 	vector<float> trackUser();
-	vector<float> extractAng(Vector3D bone, float rotAng);
+	vector<float> extractAng(Vector3D bone, float rotAng, int right);
 	vector<Vector3D> rodrigues_rot(vector<Vector3D> vectors, Vector3D rot, float theta);
 	void clipJoints(vector<float> & joints);
 	Vector3D convertPoint3ftoVector3D (const nite::Point3f& point);
 	int isTrackingUser();
 	int updateUserState(const nite::UserData& user, unsigned long long ts);
+	Vector3D extendVector3D (Vector3D bone, float length);
+	float rotateAxes (float pitch, float elbowRoll, bool rightSide);
+	void printVec (string name, Vector3D v);
 	//float clipJointAngle(float angle, String )
 
 	inline float vectorDistance(Vector3D vector1, Vector3D vector2);
@@ -102,6 +108,7 @@ public:
 	inline void div (Vector3D &vector, float op);
 	inline Vector3D mul (Vector3D vector, float op);
 	inline Vector3D sub (Vector3D vector1, Vector3D vector2);
+	inline Vector3D sum (Vector3D vector1, Vector3D vector2);
 	inline float dot (Vector3D vector1, Vector3D vector2);
 	inline Vector3D cross (Vector3D k, Vector3D v);
 	inline float angleBtwVecs (Vector3D k, Vector3D v);

@@ -78,11 +78,11 @@ public:
 		openni_joints[7] = "ShoulderRollR";
 		openni_joints[8] = "ShoulderYawR";
 		openni_joints[9] = "ElbowRollR";
-		openni_joints[10] = "HipRollL";
-		openni_joints[11] = "HipPitchL";
+		openni_joints[10] = "HipPitchL";
+		openni_joints[11] = "HipRollL";
 		openni_joints[12] = "KneePitchL";
-		openni_joints[13] = "HipRollR";
-		openni_joints[14] = "HipPitchR";
+		openni_joints[13] = "HipPitchR";
+		openni_joints[14] = "HipRollR";
 		openni_joints[15] = "KneePitchR";
 		openni_joints[16] = "TorsoBending";
 
